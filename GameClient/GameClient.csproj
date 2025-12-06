@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <OutputType>WinExe</OutputType>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <TieredCompilation>false</TieredCompilation>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- MonoGame Framework -->
+    <!-- Note: ContentPipeline tools are included with MonoGame.Framework.DesktopGL -->
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.1.303" />
+    
+    <!-- Myra UI Framework -->
+    <PackageReference Include="Myra" Version="1.2.0.215" />
+    
+    <!-- Dependency Injection -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    
+    <!-- Project Reference -->
+    <ProjectReference Include="..\GameCore\GameCore.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Content Pipeline Reference -->
+    <MonoGameContentReference Include="..\GameContent\GameContent.mgcb" />
+  </ItemGroup>
+
+</Project>
+

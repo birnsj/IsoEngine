@@ -1,0 +1,129 @@
+{
+  "Entities": [
+    {
+      "Type": "Interactable",
+      "Name": "Well",
+      "Description": "An old stone well. The water looks clear and fresh.",
+      "Position": {
+        "X": 5,
+        "Y": 5
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": null
+    },
+    {
+      "Type": "Interactable",
+      "Name": "Chest",
+      "Description": "A wooden chest. It appears to be locked.",
+      "Position": {
+        "X": 15,
+        "Y": 8
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": null
+    },
+    {
+      "Type": "Interactable",
+      "Name": "Sign",
+      "Description": "A wooden signpost. It reads: \u0027Welcome to the Village\u0027.",
+      "Position": {
+        "X": 8,
+        "Y": 15
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": null
+    },
+    {
+      "Type": "Interactable",
+      "Name": "NPC: Guard",
+      "Description": "A village guard stands watch. \u0027Greetings, traveler!\u0027",
+      "Position": {
+        "X": 12,
+        "Y": 12
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": null
+    },
+    {
+      "Type": "GroundItem",
+      "Name": "Gold Coin",
+      "Description": "Pick up Gold Coin",
+      "Position": {
+        "X": 6,
+        "Y": 6
+      },
+      "DialogId": null,
+      "ItemId": "gold_coin",
+      "Quantity": 1,
+      "EnemyStats": null
+    },
+    {
+      "Type": "GroundItem",
+      "Name": "Health Potion",
+      "Description": "Pick up Health Potion",
+      "Position": {
+        "X": 10,
+        "Y": 10
+      },
+      "DialogId": null,
+      "ItemId": "health_potion",
+      "Quantity": 1,
+      "EnemyStats": null
+    },
+    {
+      "Type": "GroundItem",
+      "Name": "Iron Sword",
+      "Description": "Pick up Iron Sword",
+      "Position": {
+        "X": 14,
+        "Y": 14
+      },
+      "DialogId": null,
+      "ItemId": "sword",
+      "Quantity": 1,
+      "EnemyStats": null
+    },
+    {
+      "Type": "Enemy",
+      "Name": "Enemy",
+      "Description": "A hostile enemy",
+      "Position": {
+        "X": 7,
+        "Y": 7
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": {
+        "MaxHealth": 50,
+        "AttackPower": 8,
+        "Defense": 1
+      }
+    },
+    {
+      "Type": "Enemy",
+      "Name": "Enemy",
+      "Description": "A hostile enemy",
+      "Position": {
+        "X": 13,
+        "Y": 13
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": {
+        "MaxHealth": 75,
+        "AttackPower": 10,
+        "Defense": 2
+      }
+    }
+  ]
+}

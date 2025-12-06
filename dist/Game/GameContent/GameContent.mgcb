@@ -1,0 +1,20 @@
+#begin GameContent.mgcb
+#------------------- Global Properties --------------------
+
+/outputDir:bin/$(Platform)
+/intermediateDir:obj/$(Platform)
+/platform:DesktopGL
+/config:
+/profile:Reach
+/compress:False
+
+#------------------- Content Files --------------------
+
+#begin fx/LightingEffect.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:fx/LightingEffect.fx
+
+#end GameContent.mgcb
+

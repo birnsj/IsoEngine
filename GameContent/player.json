@@ -1,0 +1,11 @@
+{
+  "name": "Player",
+  "maxHealth": 100,
+  "attackPower": 15,
+  "defense": 5,
+  "movementSpeed": 150,
+  "spritePath": "sprites/Player128.png",
+  "spriteScale": 0.15,
+  "startPositionX": 10,
+  "startPositionY": 10
+}

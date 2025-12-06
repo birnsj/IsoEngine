@@ -1,0 +1,161 @@
+{
+  "Id": "guard_dialog",
+  "Name": "Village Guard Conversation",
+  "StartNodeId": "greeting",
+  "Nodes": [
+    {
+      "Id": "greeting",
+      "Text": "Greetings, traveler! Welcome to our village. How may I assist you?",
+      "Choices": [
+        {
+          "Text": "Tell me about this village.",
+          "NextNodeId": "village_info"
+        },
+        {
+          "Text": "Have you seen anything suspicious?",
+          "NextNodeId": "suspicious"
+        },
+        {
+          "Text": "I'm just passing through.",
+          "NextNodeId": "farewell"
+        }
+      ]
+    },
+    {
+      "Id": "village_info",
+      "Text": "This is a peaceful farming village. We've been here for generations, growing crops and raising livestock. The villagers are friendly, and we rarely have trouble.",
+      "Choices": [
+        {
+          "Text": "What about the surrounding area?",
+          "NextNodeId": "surrounding_area"
+        },
+        {
+          "Text": "Thank you for the information.",
+          "NextNodeId": "farewell"
+        }
+      ]
+    },
+    {
+      "Id": "surrounding_area",
+      "Text": "The forest to the north can be dangerous at night. We've heard strange noises coming from there. During the day, it's safe enough, but I'd recommend staying on the main paths.",
+      "Choices": [
+        {
+          "Text": "What kind of strange noises?",
+          "NextNodeId": "strange_noises",
+          "SetFlag": "AskedAboutNoises",
+          "SetFlagValue": true
+        },
+        {
+          "Text": "I'll be careful. Thanks!",
+          "NextNodeId": "farewell"
+        }
+      ]
+    },
+    {
+      "Id": "strange_noises",
+      "Text": "Howling, mostly. Some of the villagers say they've seen glowing eyes in the darkness. I haven't seen it myself, but I trust their word. Best to stay away after sunset.",
+      "Choices": [
+        {
+          "Text": "That's concerning. I'll keep my guard up.",
+          "NextNodeId": "farewell"
+        },
+        {
+          "Text": "Maybe I should investigate...",
+          "NextNodeId": "investigation_warning"
+        }
+      ]
+    },
+    {
+      "Id": "investigation_warning",
+      "Text": "I wouldn't recommend that, traveler. We've lost a few people who went into the forest at night. If you must go, at least wait until morning and bring a weapon.",
+      "Choices": [
+        {
+          "Text": "I understand. I'll be cautious.",
+          "NextNodeId": "farewell"
+        },
+        {
+          "Text": "I can handle myself.",
+          "NextNodeId": "farewell"
+        }
+      ]
+    },
+    {
+      "Id": "suspicious",
+      "Text": "Hmm, now that you mention it... There was a stranger who came through yesterday. Didn't say much, just asked about the old ruins to the east. Seemed in a hurry.",
+      "Choices": [
+        {
+          "Text": "What did they look like?",
+          "NextNodeId": "stranger_description",
+          "SetFlag": "AskedAboutStranger",
+          "SetFlagValue": true
+        },
+        {
+          "Text": "Old ruins? Tell me more.",
+          "NextNodeId": "ruins_info"
+        },
+        {
+          "Text": "I see. Thanks for the information.",
+          "NextNodeId": "farewell"
+        }
+      ]
+    },
+    {
+      "Id": "stranger_description",
+      "Text": "Tall, wearing a dark cloak. Had a scar across their left cheek. Carried themselves like someone who's seen combat. They left heading east toward the ruins.",
+      "Choices": [
+        {
+          "Text": "Tell me about the ruins.",
+          "NextNodeId": "ruins_info"
+        },
+        {
+          "Text": "I'll keep an eye out. Thanks!",
+          "NextNodeId": "farewell"
+        }
+      ]
+    },
+    {
+      "Id": "ruins_info",
+      "Text": "The ruins are ancient, predating our village by centuries. No one goes there much - it's said to be cursed. The stranger seemed very interested in them, though.",
+      "Choices": [
+        {
+          "Text": "Cursed? What do you mean?",
+          "NextNodeId": "curse_info",
+          "RequiredFlag": "AskedAboutStranger",
+          "RequiredValue": true
+        },
+        {
+          "Text": "Interesting. I might check them out.",
+          "NextNodeId": "farewell"
+        },
+        {
+          "Text": "Thanks for the warning.",
+          "NextNodeId": "farewell"
+        }
+      ]
+    },
+    {
+      "Id": "curse_info",
+      "Text": "Old stories say that anyone who disturbs the ruins will bring misfortune upon themselves. I don't know if it's true, but I've never heard of anyone who went there and came back unchanged.",
+      "Choices": [
+        {
+          "Text": "That's quite a story. I'll be careful.",
+          "NextNodeId": "farewell"
+        },
+        {
+          "Text": "Sounds like superstition to me.",
+          "NextNodeId": "farewell"
+        }
+      ]
+    },
+    {
+      "Id": "farewell",
+      "Text": "Safe travels, traveler! If you need anything else, just ask.",
+      "Choices": [
+        {
+          "Text": "Goodbye!",
+          "NextNodeId": null
+        }
+      ]
+    }
+  ]
+}

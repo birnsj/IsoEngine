@@ -1,0 +1,384 @@
+{
+  "Entities": [
+    {
+      "Type": "Interactable",
+      "Name": "Well",
+      "Description": "An old stone well. The water looks clear and fresh.",
+      "Position": {
+        "X": 3.1046062,
+        "Y": 5.256663
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": null
+    },
+    {
+      "Type": "Interactable",
+      "Name": "Chest of wood",
+      "Description": "A wooden chest. It appears to be locked.",
+      "Position": {
+        "X": 15,
+        "Y": 8.0625
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": null
+    },
+    {
+      "Type": "Interactable",
+      "Name": "Sign",
+      "Description": "A wooden signpost. It reads: \u0027Welcome to the Village\u0027.",
+      "Position": {
+        "X": 8,
+        "Y": 15
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": null
+    },
+    {
+      "Type": "NPC",
+      "Name": "NPC: Guard",
+      "Description": "A village guard stands watch. Press E to talk.",
+      "Position": {
+        "X": 12,
+        "Y": 12
+      },
+      "DialogId": "guard_dialog",
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": null
+    },
+    {
+      "Type": "GroundItem",
+      "Name": "Gold Coin",
+      "Description": "Pick up Gold Coin",
+      "Position": {
+        "X": 9,
+        "Y": 4.25
+      },
+      "DialogId": null,
+      "ItemId": "gold_coin",
+      "Quantity": 1,
+      "EnemyStats": null
+    },
+    {
+      "Type": "GroundItem",
+      "Name": "Health Potion",
+      "Description": "Pick up Health Potion",
+      "Position": {
+        "X": 10,
+        "Y": 10
+      },
+      "DialogId": null,
+      "ItemId": "health_potion",
+      "Quantity": 1,
+      "EnemyStats": null
+    },
+    {
+      "Type": "GroundItem",
+      "Name": "Iron Sword",
+      "Description": "Pick up Iron Sword",
+      "Position": {
+        "X": 14,
+        "Y": 14
+      },
+      "DialogId": null,
+      "ItemId": "sword",
+      "Quantity": 1,
+      "EnemyStats": null
+    },
+    {
+      "Type": "Enemy",
+      "Name": "Enemy",
+      "Description": "A hostile enemy",
+      "Position": {
+        "X": 9.455466,
+        "Y": 2.668021
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": {
+        "MaxHealth": 50,
+        "AttackPower": 8,
+        "Defense": 1
+      }
+    },
+    {
+      "Type": "Enemy",
+      "Name": "Enemy",
+      "Description": "A hostile enemy",
+      "Position": {
+        "X": 12.162648,
+        "Y": 3.7484598
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": {
+        "MaxHealth": 75,
+        "AttackPower": 10,
+        "Defense": 2
+      }
+    },
+    {
+      "Type": "Enemy",
+      "Name": "Enemy",
+      "Description": "A hostile enemy",
+      "Position": {
+        "X": 5.5,
+        "Y": 2.3
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": {
+        "MaxHealth": 40,
+        "AttackPower": 6,
+        "Defense": 0
+      }
+    },
+    {
+      "Type": "Enemy",
+      "Name": "Enemy",
+      "Description": "A hostile enemy",
+      "Position": {
+        "X": 16.2,
+        "Y": 5.8
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": {
+        "MaxHealth": 60,
+        "AttackPower": 9,
+        "Defense": 1
+      }
+    },
+    {
+      "Type": "Enemy",
+      "Name": "Enemy",
+      "Description": "A hostile enemy",
+      "Position": {
+        "X": 3.7,
+        "Y": 10.5
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": {
+        "MaxHealth": 45,
+        "AttackPower": 7,
+        "Defense": 1
+      }
+    },
+    {
+      "Type": "Enemy",
+      "Name": "Enemy",
+      "Description": "A hostile enemy",
+      "Position": {
+        "X": 17.8,
+        "Y": 12.4
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": {
+        "MaxHealth": 90,
+        "AttackPower": 12,
+        "Defense": 3
+      }
+    },
+    {
+      "Type": "Enemy",
+      "Name": "Enemy",
+      "Description": "A hostile enemy",
+      "Position": {
+        "X": 6.3,
+        "Y": 18.1
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": {
+        "MaxHealth": 65,
+        "AttackPower": 9,
+        "Defense": 2
+      }
+    },
+    {
+      "Type": "Enemy",
+      "Name": "Enemy",
+      "Description": "A hostile enemy",
+      "Position": {
+        "X": 18.5,
+        "Y": 18.7
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": {
+        "MaxHealth": 100,
+        "AttackPower": 15,
+        "Defense": 4
+      }
+    },
+    {
+      "Type": "Enemy",
+      "Name": "Enemy",
+      "Description": "A hostile enemy",
+      "Position": {
+        "X": 2.1,
+        "Y": 8.2
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": {
+        "MaxHealth": 42,
+        "AttackPower": 6,
+        "Defense": 0
+      }
+    },
+    {
+      "Type": "Enemy",
+      "Name": "Enemy",
+      "Description": "A hostile enemy",
+      "Position": {
+        "X": 19.3,
+        "Y": 3.6
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": {
+        "MaxHealth": 55,
+        "AttackPower": 8,
+        "Defense": 1
+      }
+    },
+    {
+      "Type": "Enemy",
+      "Name": "Enemy",
+      "Description": "A hostile enemy",
+      "Position": {
+        "X": 1.5,
+        "Y": 15.8
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": {
+        "MaxHealth": 38,
+        "AttackPower": 5,
+        "Defense": 0
+      }
+    },
+    {
+      "Type": "Enemy",
+      "Name": "Enemy",
+      "Description": "A hostile enemy",
+      "Position": {
+        "X": 15.4,
+        "Y": 19.2
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": {
+        "MaxHealth": 95,
+        "AttackPower": 13,
+        "Defense": 3
+      }
+    },
+    {
+      "Type": "Enemy",
+      "Name": "Enemy",
+      "Description": "A hostile enemy",
+      "Position": {
+        "X": 4.8,
+        "Y": 16.5
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": {
+        "MaxHealth": 58,
+        "AttackPower": 8,
+        "Defense": 2
+      }
+    },
+    {
+      "Type": "Enemy",
+      "Name": "Enemy",
+      "Description": "A hostile enemy",
+      "Position": {
+        "X": 11.2,
+        "Y": 6.9
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": {
+        "MaxHealth": 48,
+        "AttackPower": 7,
+        "Defense": 1
+      }
+    },
+    {
+      "Type": "Enemy",
+      "Name": "Enemy",
+      "Description": "A hostile enemy",
+      "Position": {
+        "X": 7.6,
+        "Y": 1.4
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": {
+        "MaxHealth": 44,
+        "AttackPower": 6,
+        "Defense": 0
+      }
+    },
+    {
+      "Type": "Enemy",
+      "Name": "Enemy",
+      "Description": "A hostile enemy",
+      "Position": {
+        "X": 13.9,
+        "Y": 7.3
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": {
+        "MaxHealth": 70,
+        "AttackPower": 10,
+        "Defense": 2
+      }
+    },
+    {
+      "Type": "Enemy",
+      "Name": "Enemy",
+      "Description": "A hostile enemy",
+      "Position": {
+        "X": 0.8,
+        "Y": 12.6
+      },
+      "DialogId": null,
+      "ItemId": null,
+      "Quantity": null,
+      "EnemyStats": {
+        "MaxHealth": 35,
+        "AttackPower": 5,
+        "Defense": 0
+      }
+    }
+  ]
+}

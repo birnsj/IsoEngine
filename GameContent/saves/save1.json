@@ -1,0 +1,23 @@
+{
+  "PlayerX": 193.99998,
+  "PlayerY": 288.65283,
+  "FacingX": 1.5807577E-06,
+  "FacingY": -1,
+  "Stats": {
+    "MaxHealth": 100,
+    "CurrentHealth": 100,
+    "AttackPower": 15,
+    "Defense": 2
+  },
+  "InventoryItems": [],
+  "WorldFlags": {},
+  "ActiveInteractableNames": [
+    "Well",
+    "Chest",
+    "Sign",
+    "NPC: Guard",
+    "Gold Coin",
+    "Health Potion",
+    "Iron Sword"
+  ]
+}

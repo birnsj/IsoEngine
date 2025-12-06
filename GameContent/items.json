@@ -1,0 +1,58 @@
+[
+  {
+    "Id": "gold_coin",
+    "Name": "Gold Coin",
+    "Description": "A shiny gold coin. Currency of the realm.",
+    "Stackable": true,
+    "MaxStack": 20,
+    "ImagePath": null
+  },
+  {
+    "Id": "health_potion",
+    "Name": "Health Potion",
+    "Description": "A red potion that restores health.",
+    "Stackable": true,
+    "MaxStack": 20,
+    "ImagePath": null
+  },
+  {
+    "Id": "sword",
+    "Name": "Iron Sword",
+    "Description": "A basic iron sword. Better than nothing.",
+    "Stackable": true,
+    "MaxStack": 20,
+    "ImagePath": null
+  },
+  {
+    "Id": "shield",
+    "Name": "Wooden Shield",
+    "Description": "A simple wooden shield for defense.",
+    "Stackable": true,
+    "MaxStack": 20,
+    "ImagePath": null
+  },
+  {
+    "Id": "bread",
+    "Name": "Bread",
+    "Description": "A loaf of bread. Restores a small amount of hunger.",
+    "Stackable": true,
+    "MaxStack": 20,
+    "ImagePath": null
+  },
+  {
+    "Id": "key",
+    "Name": "Rusty Key",
+    "Description": "An old, rusty key. It might open something.",
+    "Stackable": true,
+    "MaxStack": 20,
+    "ImagePath": null
+  },
+  {
+    "Id": "ammo",
+    "Name": "Ammunition",
+    "Description": "Standard ammunition for ranged weapons.",
+    "Stackable": true,
+    "MaxStack": 20,
+    "ImagePath": null
+  }
+]
