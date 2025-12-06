@@ -94,9 +94,11 @@ public partial class MainEditorForm : Form
         var settingsMenu = new ToolStripMenuItem("Settings");
         var settingsItem = new ToolStripMenuItem("Editor Settings...", null, (s, e) => OpenSettings());
         var configureApisItem = new ToolStripMenuItem("Configure APIs...", null, (s, e) => OpenApiConfiguration());
+        var gitControlItem = new ToolStripMenuItem("Git Control...", null, (s, e) => OpenGitControl());
         settingsMenu.DropDownItems.Add(settingsItem);
         settingsMenu.DropDownItems.Add(new ToolStripSeparator());
         settingsMenu.DropDownItems.Add(configureApisItem);
+        settingsMenu.DropDownItems.Add(gitControlItem);
 
         // About Menu
         var aboutMenu = new ToolStripMenuItem("About");
@@ -713,6 +715,12 @@ public partial class MainEditorForm : Form
     private void OpenApiConfiguration()
     {
         using var dialog = new ApiKeyConfigurationDialog();
+        dialog.ShowDialog(this);
+    }
+
+    private void OpenGitControl()
+    {
+        using var dialog = new GitControlDialog();
         dialog.ShowDialog(this);
     }
 }
