@@ -35,16 +35,20 @@ public static class GitService
             var statusCode = line.Substring(0, 2);
             var filePath = line.Substring(2).Trim().Trim('"');
 
+            // Check if this is an untracked file (status code is "??")
+            var isUntracked = statusCode == "??";
+            
             // Parse both staged (first char) and unstaged (second char) status
             var stagedChar = statusCode.Length > 0 ? statusCode[0] : ' ';
             var unstagedChar = statusCode.Length > 1 ? statusCode[1] : ' ';
 
-            // If file is staged (first char is not space), it will be included in commit
-            // If file is unstaged (second char is not space), it's a working tree change
-            var hasStagedChanges = stagedChar != ' ' && stagedChar != '?';
-            var hasUnstagedChanges = unstagedChar != ' ' && unstagedChar != '?';
+            // If file is staged (first char is not space and not ?), it will be included in commit
+            // If file is unstaged (second char is not space and not ?), it's a working tree change
+            // Untracked files (??) are always unstaged
+            var hasStagedChanges = !isUntracked && stagedChar != ' ' && stagedChar != '?';
+            var hasUnstagedChanges = isUntracked || (unstagedChar != ' ' && unstagedChar != '?');
 
-            // Include file if it has either staged or unstaged changes
+            // Include file if it has either staged or unstaged changes (including untracked)
             // If it has both, we show it as unstaged (needs to be re-staged after commit)
             if (hasStagedChanges || hasUnstagedChanges)
             {
@@ -53,7 +57,7 @@ public static class GitService
                     FilePath = filePath,
                     Status = GetStatusFromCode(statusCode),
                     IsStaged = hasStagedChanges && !hasUnstagedChanges,  // Only staged if NOT also unstaged
-                    IsUnstaged = hasUnstagedChanges  // Always unstaged if it has unstaged changes
+                    IsUnstaged = hasUnstagedChanges  // Always unstaged if it has unstaged changes (including untracked)
                 };
 
                 files.Add(fileStatus);
