@@ -14,7 +14,8 @@ namespace GameEditor.Forms;
 /// </summary>
 public class GitControlDialog : Form
 {
-    private ListBox? _changedFilesListBox;
+    private ListBox? _unstagedFilesListBox;
+    private ListBox? _stagedFilesListBox;
     private ListBox? _committedListBox;
     private TextBox? _commitMessageTextBox;
     private Button? _refreshButton;
@@ -27,12 +28,14 @@ public class GitControlDialog : Form
     private Label? _branchLabel;
     private Label? _remoteLabel;
     private Label? _committedLabel;
+    private Label? _stagedLabel;
     private SplitContainer? _mainSplitContainer;
 
     public GitControlDialog()
     {
         InitializeComponent();
         RefreshFileList();
+        RefreshStagedList();
         RefreshCommittedList();
         UpdateStatusInfo();
     }
@@ -92,32 +95,56 @@ public class GitControlDialog : Form
         mainPanel.Controls.Add(statusPanel);
         yPos += 90;
 
-        // Split container for changed files and committed changes
+        // Split container for three sections: Unstaged, Staged, and Committed
         _mainSplitContainer = new SplitContainer
         {
             Orientation = Orientation.Horizontal,
             Location = new Point(15, yPos),
-            Size = new Size(950, 280),
+            Size = new Size(950, 400),
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
-            SplitterDistance = 140
+            SplitterDistance = 200
         };
 
-        // Top panel: Changed files (unstaged/uncommitted)
-        var changedFilesPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(5) };
-        var filesLabel = new Label
+        // Top panel: Unstaged files
+        var unstagedFilesPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(5) };
+        var unstagedLabel = new Label
         {
-            Text = "Uncommitted Changes:",
+            Text = "Unstaged Changes:",
             Dock = DockStyle.Top,
             Height = 20,
             Font = new Font(DefaultFont.FontFamily, 10f, FontStyle.Bold)
         };
-        _changedFilesListBox = new ListBox
+        _unstagedFilesListBox = new ListBox
         {
             Dock = DockStyle.Fill,
             SelectionMode = SelectionMode.MultiExtended
         };
-        changedFilesPanel.Controls.Add(_changedFilesListBox);
-        changedFilesPanel.Controls.Add(filesLabel);
+        unstagedFilesPanel.Controls.Add(_unstagedFilesListBox);
+        unstagedFilesPanel.Controls.Add(unstagedLabel);
+
+        // Bottom split container for Staged and Committed
+        var bottomSplitContainer = new SplitContainer
+        {
+            Orientation = Orientation.Horizontal,
+            Dock = DockStyle.Fill,
+            SplitterDistance = 180
+        };
+
+        // Middle panel: Staged files
+        var stagedFilesPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(5) };
+        _stagedLabel = new Label
+        {
+            Text = "Staged Files (Ready to Commit):",
+            Dock = DockStyle.Top,
+            Height = 20,
+            Font = new Font(DefaultFont.FontFamily, 10f, FontStyle.Bold)
+        };
+        _stagedFilesListBox = new ListBox
+        {
+            Dock = DockStyle.Fill
+        };
+        stagedFilesPanel.Controls.Add(_stagedFilesListBox);
+        stagedFilesPanel.Controls.Add(_stagedLabel);
 
         // Bottom panel: Committed changes (ready to push)
         var committedPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(5) };
@@ -135,11 +162,14 @@ public class GitControlDialog : Form
         committedPanel.Controls.Add(_committedListBox);
         committedPanel.Controls.Add(_committedLabel);
 
-        _mainSplitContainer.Panel1.Controls.Add(changedFilesPanel);
-        _mainSplitContainer.Panel2.Controls.Add(committedPanel);
+        bottomSplitContainer.Panel1.Controls.Add(stagedFilesPanel);
+        bottomSplitContainer.Panel2.Controls.Add(committedPanel);
+
+        _mainSplitContainer.Panel1.Controls.Add(unstagedFilesPanel);
+        _mainSplitContainer.Panel2.Controls.Add(bottomSplitContainer);
 
         mainPanel.Controls.Add(_mainSplitContainer);
-        yPos += 290;
+        yPos += 410;
 
         // Commit message section
         var commitLabel = new Label
@@ -179,7 +209,12 @@ public class GitControlDialog : Form
             Location = new Point(10, 10),
             Anchor = AnchorStyles.Bottom | AnchorStyles.Left
         };
-        _refreshButton.Click += (s, e) => RefreshFileList();
+        _refreshButton.Click += (s, e) => {
+            RefreshFileList();
+            RefreshStagedList();
+            RefreshCommittedList();
+            UpdateStatusInfo();
+        };
         buttonPanel.Controls.Add(_refreshButton);
 
         _fetchButton = new Button
@@ -308,31 +343,34 @@ public class GitControlDialog : Form
 
     private void RefreshFileList()
     {
-        if (_changedFilesListBox == null)
+        if (_unstagedFilesListBox == null)
             return;
 
-        _changedFilesListBox.Items.Clear();
+        _unstagedFilesListBox.Items.Clear();
 
         if (!GitService.IsGitRepository())
         {
-            _changedFilesListBox.Items.Add("Not a Git repository");
+            _unstagedFilesListBox.Items.Add("Not a Git repository");
             return;
         }
 
         var (success, files, error) = GitService.GetChangedFiles();
         if (!success)
         {
-            _changedFilesListBox.Items.Add($"Error: {error}");
+            _unstagedFilesListBox.Items.Add($"Error: {error}");
             return;
         }
 
-        if (files.Count == 0)
+        // Only show unstaged files
+        var unstagedFiles = files.Where(f => f.IsUnstaged).ToList();
+
+        if (unstagedFiles.Count == 0)
         {
-            _changedFilesListBox.Items.Add("No uncommitted changes");
+            _unstagedFilesListBox.Items.Add("No unstaged changes");
             return;
         }
 
-        foreach (var file in files.OrderBy(f => f.Status).ThenBy(f => f.FilePath))
+        foreach (var file in unstagedFiles.OrderBy(f => f.Status).ThenBy(f => f.FilePath))
         {
             var statusPrefix = file.Status switch
             {
@@ -343,10 +381,51 @@ public class GitControlDialog : Form
                 _ => "[?]"
             };
 
-            _changedFilesListBox.Items.Add($"{statusPrefix} {file.FilePath}");
+            _unstagedFilesListBox.Items.Add($"{statusPrefix} {file.FilePath}");
+        }
+    }
+
+    private void RefreshStagedList()
+    {
+        if (_stagedFilesListBox == null)
+            return;
+
+        _stagedFilesListBox.Items.Clear();
+
+        if (!GitService.IsGitRepository())
+        {
+            _stagedFilesListBox.Items.Add("Not a Git repository");
+            return;
         }
 
-        RefreshCommittedList();
+        var (success, files, error) = GitService.GetStagedFiles();
+        if (!success)
+        {
+            _stagedFilesListBox.Items.Add($"Error: {error}");
+            return;
+        }
+
+        if (files.Count == 0)
+        {
+            _stagedFilesListBox.Items.Add("No staged files");
+            _stagedLabel!.Text = "Staged Files (Ready to Commit):";
+            return;
+        }
+
+        _stagedLabel!.Text = $"Staged Files (Ready to Commit): {files.Count} file(s)";
+
+        foreach (var file in files.OrderBy(f => f.Status).ThenBy(f => f.FilePath))
+        {
+            var statusPrefix = file.Status switch
+            {
+                GitFileStatusType.Added => "[ADDED]",
+                GitFileStatusType.Modified => "[MODIFIED]",
+                GitFileStatusType.Deleted => "[DELETED]",
+                _ => "[?]"
+            };
+
+            _stagedFilesListBox.Items.Add($"{statusPrefix} {file.FilePath}");
+        }
     }
 
     private void RefreshCommittedList()
@@ -412,6 +491,7 @@ public class GitControlDialog : Form
         {
             MessageBox.Show("All files staged successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
             RefreshFileList();
+            RefreshStagedList();
         }
         else
         {
@@ -449,6 +529,7 @@ public class GitControlDialog : Form
             
             // Refresh all views
             RefreshFileList();
+            RefreshStagedList();
             RefreshCommittedList();
             UpdateStatusInfo();
             
@@ -540,7 +621,9 @@ public class GitControlDialog : Form
             }
             MessageBox.Show(message, "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
             RefreshFileList();
+            RefreshStagedList();
             RefreshCommittedList();
+            UpdateStatusInfo();
         }
         else
         {
@@ -576,7 +659,9 @@ public class GitControlDialog : Form
             }
             MessageBox.Show(message, "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
             RefreshFileList();
+            RefreshStagedList();
             RefreshCommittedList();
+            UpdateStatusInfo();
         }
         else
         {
@@ -677,7 +762,9 @@ public class GitControlDialog : Form
         {
             MessageBox.Show("Committed changes pushed successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
             RefreshFileList();
+            RefreshStagedList();
             RefreshCommittedList();
+            UpdateStatusInfo();
         }
         else
         {
@@ -703,7 +790,9 @@ public class GitControlDialog : Form
                     {
                         MessageBox.Show("Committed changes pushed successfully after pull!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         RefreshFileList();
+                        RefreshStagedList();
                         RefreshCommittedList();
+                        UpdateStatusInfo();
                     }
                     else
                     {

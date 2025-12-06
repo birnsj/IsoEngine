@@ -45,16 +45,66 @@ public static class GitService
             var hasUnstagedChanges = unstagedChar != ' ' && unstagedChar != '?';
 
             // Include file if it has either staged or unstaged changes
+            // If it has both, we show it as unstaged (needs to be re-staged after commit)
             if (hasStagedChanges || hasUnstagedChanges)
             {
                 var fileStatus = new GitFileStatus
                 {
                     FilePath = filePath,
-                    Status = GetStatusFromCode(statusCode)
+                    Status = GetStatusFromCode(statusCode),
+                    IsStaged = hasStagedChanges && !hasUnstagedChanges,  // Only staged if NOT also unstaged
+                    IsUnstaged = hasUnstagedChanges  // Always unstaged if it has unstaged changes
                 };
 
                 files.Add(fileStatus);
             }
+        }
+
+        return (true, files, string.Empty);
+    }
+
+    /// <summary>
+    /// Gets the list of staged files (ready to commit).
+    /// </summary>
+    public static (bool success, List<GitFileStatus> files, string errorMessage) GetStagedFiles()
+    {
+        var files = new List<GitFileStatus>();
+        var (success, output, error) = RunGitCommand("diff --cached --name-status");
+        
+        if (!success)
+        {
+            return (false, files, error);
+        }
+
+        if (string.IsNullOrWhiteSpace(output))
+        {
+            return (true, files, string.Empty);
+        }
+
+        var lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (var line in lines)
+        {
+            if (string.IsNullOrWhiteSpace(line) || line.Length < 2)
+                continue;
+
+            var statusChar = line[0];
+            var filePath = line.Substring(1).Trim().Trim('\t', ' ');
+
+            var fileStatus = new GitFileStatus
+            {
+                FilePath = filePath,
+                Status = statusChar switch
+                {
+                    'A' => GitFileStatusType.Added,
+                    'M' => GitFileStatusType.Modified,
+                    'D' => GitFileStatusType.Deleted,
+                    _ => GitFileStatusType.Modified
+                },
+                IsStaged = true,
+                IsUnstaged = false
+            };
+
+            files.Add(fileStatus);
         }
 
         return (true, files, string.Empty);
@@ -410,6 +460,8 @@ public class GitFileStatus
 {
     public string FilePath { get; set; } = string.Empty;
     public GitFileStatusType Status { get; set; }
+    public bool IsStaged { get; set; }
+    public bool IsUnstaged { get; set; }
 }
 
 /// <summary>
