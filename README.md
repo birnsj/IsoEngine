@@ -1,4 +1,4 @@
-# Ultima 8-Like Prototype
+# IsoEngine Prototype
 
 A 2D isometric action RPG prototype inspired by Ultima 8, built with MonoGame and Myra UI.
 
