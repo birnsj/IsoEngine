@@ -36,6 +36,9 @@ public class EntityRenderer : IGameService
     
     // Loot pulse tracking for dead enemies with inventory
     private readonly Dictionary<Entity, LootPulseState> _lootPulseStates = new();
+    
+    // Entity sprite tracking
+    private readonly Dictionary<Entity, Texture2D?> _entitySprites = new();
 
     public EntityRenderer(Camera2D camera, IsometricTileMap tileMap)
     {
@@ -46,7 +49,7 @@ public class EntityRenderer : IGameService
     /// <summary>
     /// Adds an entity to be rendered.
     /// </summary>
-    public void AddEntity(Entity entity)
+    public void AddEntity(Entity entity, string? spritePath = null)
     {
         if (!_entities.Contains(entity))
         {
@@ -59,6 +62,95 @@ public class EntityRenderer : IGameService
                 logger?.Info($"EntityRenderer.AddEntity: Added ranged enemy at {entity.Position}, IsActive={entity.IsActive}, Total entities now: {_entities.Count}");
             }
         }
+        
+        // Set sprite path if provided
+        if (!string.IsNullOrEmpty(spritePath))
+        {
+            SetEntitySprite(entity, spritePath);
+        }
+    }
+    
+    /// <summary>
+    /// Sets the sprite path for an entity and loads the texture.
+    /// </summary>
+    public void SetEntitySprite(Entity entity, string spritePath)
+    {
+        if (string.IsNullOrEmpty(spritePath) || _graphicsDevice == null)
+        {
+            _entitySprites[entity] = null;
+            return;
+        }
+        
+        try
+        {
+            // Try to load sprite from GameContent directory
+            var spriteTexture = LoadSpriteTexture(spritePath);
+            _entitySprites[entity] = spriteTexture;
+        }
+        catch (Exception ex)
+        {
+            var logger = GameCore.Services.ServiceLocator.Get<GameCore.Services.ILogger>();
+            logger?.Warning($"Failed to load sprite '{spritePath}' for entity: {ex.Message}");
+            _entitySprites[entity] = null;
+        }
+    }
+    
+    /// <summary>
+    /// Loads a sprite texture from a path relative to GameContent.
+    /// </summary>
+    private Texture2D? LoadSpriteTexture(string spritePath)
+    {
+        if (_graphicsDevice == null || string.IsNullOrEmpty(spritePath))
+            return null;
+        
+        try
+        {
+            string? fullPath = null;
+            var normalizedPath = spritePath.Replace('/', System.IO.Path.DirectorySeparatorChar).Replace('\\', System.IO.Path.DirectorySeparatorChar);
+            
+            // Try absolute path first
+            if (System.IO.Path.IsPathRooted(normalizedPath) && System.IO.File.Exists(normalizedPath))
+            {
+                fullPath = normalizedPath;
+            }
+            else
+            {
+                // Try relative to GameContent directory
+                var gameContentPath = GameClient.Utilities.GameContentPathHelper.GetGameContentPath();
+                if (gameContentPath != null)
+                {
+                    var relativePath = normalizedPath;
+                    if (relativePath.StartsWith("GameContent" + System.IO.Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                    {
+                        relativePath = relativePath.Substring("GameContent".Length).TrimStart(System.IO.Path.DirectorySeparatorChar);
+                    }
+                    
+                    fullPath = System.IO.Path.Combine(gameContentPath, relativePath);
+                }
+            }
+            
+            if (fullPath != null && System.IO.File.Exists(fullPath))
+            {
+                // Load image file using Texture2D.FromFile (requires file extension support)
+                using var fileStream = new System.IO.FileStream(fullPath, System.IO.FileMode.Open);
+                var texture = Texture2D.FromStream(_graphicsDevice, fileStream);
+                var logger = GameCore.Services.ServiceLocator.Get<GameCore.Services.ILogger>();
+                logger?.Info($"Successfully loaded sprite texture: {spritePath} -> {fullPath}");
+                return texture;
+            }
+            else
+            {
+                var logger = GameCore.Services.ServiceLocator.Get<GameCore.Services.ILogger>();
+                logger?.Warning($"Sprite file not found: '{spritePath}' (resolved to: {fullPath ?? "null"})");
+            }
+        }
+        catch (Exception ex)
+        {
+            var logger = GameCore.Services.ServiceLocator.Get<GameCore.Services.ILogger>();
+            logger?.Warning($"Error loading sprite texture '{spritePath}': {ex.Message}");
+        }
+        
+        return null;
     }
 
     /// <summary>
@@ -219,6 +311,13 @@ public class EntityRenderer : IGameService
             _healthBarStates.Remove(entity);
             _highlightStates.Remove(entity);
             _lootPulseStates.Remove(entity);
+            
+            // Dispose and remove sprite textures
+            if (_entitySprites.TryGetValue(entity, out var sprite) && sprite != null && !sprite.IsDisposed)
+            {
+                sprite.Dispose();
+            }
+            _entitySprites.Remove(entity);
         }
     }
     
@@ -445,21 +544,36 @@ public class EntityRenderer : IGameService
             }
             else
             {
-                // Draw entity as a colored rectangle
-                var entityRect = new Rectangle(
-                    (int)(screenPos.X - entity.Size.X / 2),
-                    (int)(screenPos.Y - entity.Size.Y / 2),
-                    (int)entity.Size.X,
-                    (int)entity.Size.Y);
-
-                // Debug: Log when drawing ranged enemies
-                if (entity is RangedEnemy)
+                // Check if entity has a sprite texture
+                if (_entitySprites.TryGetValue(entity, out var entitySprite) && entitySprite != null)
                 {
-                    var logger = GameCore.Services.ServiceLocator.Get<GameCore.Services.ILogger>();
-                    logger?.Debug($"Drawing ranged enemy at {screenPos}, Color={entityColor}, Rect={entityRect}");
+                    // Draw entity sprite
+                    var spriteRect = new Rectangle(
+                        (int)(screenPos.X - entitySprite.Width / 2),
+                        (int)(screenPos.Y - entitySprite.Height),
+                        entitySprite.Width,
+                        entitySprite.Height);
+                    
+                    _spriteBatch.Draw(entitySprite, spriteRect, entityColor);
                 }
+                else
+                {
+                    // Draw entity as a colored rectangle (fallback)
+                    var entityRect = new Rectangle(
+                        (int)(screenPos.X - entity.Size.X / 2),
+                        (int)(screenPos.Y - entity.Size.Y / 2),
+                        (int)entity.Size.X,
+                        (int)entity.Size.Y);
 
-                _spriteBatch.Draw(_placeholderTexture, entityRect, entityColor);
+                    // Debug: Log when drawing ranged enemies
+                    if (entity is RangedEnemy)
+                    {
+                        var logger = GameCore.Services.ServiceLocator.Get<GameCore.Services.ILogger>();
+                        logger?.Debug($"Drawing ranged enemy at {screenPos}, Color={entityColor}, Rect={entityRect}");
+                    }
+
+                    _spriteBatch.Draw(_placeholderTexture, entityRect, entityColor);
+                }
             }
 
             // Draw health bar if entity has stats (but not for dead enemies)

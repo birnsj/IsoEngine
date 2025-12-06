@@ -2344,7 +2344,7 @@ public class IsoEngineGame : Game
                         var npc = new DialogNPC(screenPos, entityData.Name, entityData.Description, dialog);
                         createdEntity = npc;
                         _interactionService.RegisterInteractable(npc);
-                        _entityRenderer.AddEntity(npc);
+                        _entityRenderer.AddEntity(npc, entityData.SpritePath);
                     }
                     else
                     {
@@ -2353,7 +2353,7 @@ public class IsoEngineGame : Game
                         var interactable = new TestInteractable(screenPos, entityData.Name, entityData.Description);
                         createdEntity = interactable;
                         _interactionService.RegisterInteractable(interactable);
-                        _entityRenderer.AddEntity(interactable);
+                        _entityRenderer.AddEntity(interactable, entityData.SpritePath);
                     }
                 }
                 else if (entityData.Type == "GroundItem")
@@ -2366,7 +2366,7 @@ public class IsoEngineGame : Game
                         var groundItem = new GroundItem(screenPos, item, entityData.Quantity ?? 1);
                         createdEntity = groundItem;
                         _interactionService.RegisterInteractable(groundItem);
-                        _entityRenderer.AddEntity(groundItem);
+                        _entityRenderer.AddEntity(groundItem, entityData.SpritePath);
                     }
                     else
                     {
@@ -2375,7 +2375,7 @@ public class IsoEngineGame : Game
                         var interactable = new TestInteractable(screenPos, entityData.Name, entityData.Description);
                         createdEntity = interactable;
                         _interactionService.RegisterInteractable(interactable);
-                        _entityRenderer.AddEntity(interactable);
+                        _entityRenderer.AddEntity(interactable, entityData.SpritePath);
                     }
                 }
                 else if (entityData.Type == "Interactable")
@@ -2383,7 +2383,7 @@ public class IsoEngineGame : Game
                     var interactable = new TestInteractable(screenPos, entityData.Name, entityData.Description);
                     createdEntity = interactable;
                     _interactionService.RegisterInteractable(interactable);
-                    _entityRenderer.AddEntity(interactable);
+                    _entityRenderer.AddEntity(interactable, entityData.SpritePath);
                 }
                 else if (entityData.Type == "Enemy")
                 {
@@ -2402,7 +2402,7 @@ public class IsoEngineGame : Game
                             );
                             createdEntity = enemy;
                             enemyService.RegisterEnemy(enemy);
-                            _entityRenderer.AddEntity(enemy);
+                            _entityRenderer.AddEntity(enemy, entityData.SpritePath);
                             
                             // Populate enemy inventory with random items
                             PopulateEnemyInventory(enemy);
@@ -2431,7 +2431,7 @@ public class IsoEngineGame : Game
                             );
                             createdEntity = rangedEnemy;
                             enemyService.RegisterRangedEnemy(rangedEnemy);
-                            _entityRenderer.AddEntity(rangedEnemy);
+                            _entityRenderer.AddEntity(rangedEnemy, entityData.SpritePath);
                             
                             // Populate ranged enemy inventory with random items
                             PopulateRangedEnemyInventory(rangedEnemy);

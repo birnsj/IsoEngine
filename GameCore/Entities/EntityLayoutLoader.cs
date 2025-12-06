@@ -31,6 +31,7 @@ public static class EntityLayoutLoader
         public int? Quantity { get; set; }
         public EnemyStatsDataJson? EnemyStats { get; set; }
         public PlacementBoundsDataJson? PlacementBounds { get; set; }
+        public string? SpritePath { get; set; }
     }
 
     /// <summary>
@@ -80,6 +81,7 @@ public static class EntityLayoutLoader
         public int? Quantity { get; set; }
         public EnemyStats? Stats { get; set; }
         public PlacementBounds? Bounds { get; set; }
+        public string? SpritePath { get; set; }
     }
 
     /// <summary>
@@ -131,7 +133,8 @@ public static class EntityLayoutLoader
                     Z = entityJson.Position.Z,
                     DialogId = entityJson.DialogId,
                     ItemId = entityJson.ItemId,
-                    Quantity = entityJson.Quantity
+                    Quantity = entityJson.Quantity,
+                    SpritePath = entityJson.SpritePath
                 };
 
                 if (entityJson.EnemyStats != null)

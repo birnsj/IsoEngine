@@ -94,11 +94,20 @@
         "Y": 2.668021,
         "Z": 0
       },
+      "Quantity": 1,
       "EnemyStats": {
         "MaxHealth": 50,
         "AttackPower": 8,
         "Defense": 1
-      }
+      },
+      "PlacementBounds": {
+        "Width": 32,
+        "Height": 64,
+        "ZHeight": 32,
+        "OffsetX": 0,
+        "OffsetY": 0
+      },
+      "SpritePath": "sprites/entities/Enemy_20251206_151251.png"
     },
     {
       "Type": "RangedEnemy",
