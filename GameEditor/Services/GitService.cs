@@ -14,6 +14,7 @@ public static class GitService
 {
     /// <summary>
     /// Gets the list of changed files (new, modified, deleted).
+    /// Includes both staged and unstaged changes.
     /// </summary>
     public static (bool success, List<GitFileStatus> files, string errorMessage) GetChangedFiles()
     {
@@ -31,16 +32,29 @@ public static class GitService
             if (string.IsNullOrWhiteSpace(line) || line.Length < 3)
                 continue;
 
-            var statusCode = line.Substring(0, 2).Trim();
+            var statusCode = line.Substring(0, 2);
             var filePath = line.Substring(2).Trim().Trim('"');
 
-            var fileStatus = new GitFileStatus
-            {
-                FilePath = filePath,
-                Status = GetStatusFromCode(statusCode)
-            };
+            // Parse both staged (first char) and unstaged (second char) status
+            var stagedChar = statusCode.Length > 0 ? statusCode[0] : ' ';
+            var unstagedChar = statusCode.Length > 1 ? statusCode[1] : ' ';
 
-            files.Add(fileStatus);
+            // If file is staged (first char is not space), it will be included in commit
+            // If file is unstaged (second char is not space), it's a working tree change
+            var hasStagedChanges = stagedChar != ' ' && stagedChar != '?';
+            var hasUnstagedChanges = unstagedChar != ' ' && unstagedChar != '?';
+
+            // Include file if it has either staged or unstaged changes
+            if (hasStagedChanges || hasUnstagedChanges)
+            {
+                var fileStatus = new GitFileStatus
+                {
+                    FilePath = filePath,
+                    Status = GetStatusFromCode(statusCode)
+                };
+
+                files.Add(fileStatus);
+            }
         }
 
         return (true, files, string.Empty);
@@ -113,6 +127,29 @@ public static class GitService
     }
 
     /// <summary>
+    /// Fetches changes from remote repository without merging.
+    /// </summary>
+    public static (bool success, string output, string errorMessage) Fetch()
+    {
+        return RunGitCommand("fetch origin");
+    }
+
+    /// <summary>
+    /// Pulls changes from remote repository (fetch + merge).
+    /// </summary>
+    public static (bool success, string output, string errorMessage) Pull()
+    {
+        var (success, branchOutput, branchError) = RunGitCommand("rev-parse --abbrev-ref HEAD");
+        if (!success)
+        {
+            return (false, string.Empty, $"Failed to get current branch: {branchError}");
+        }
+
+        var branch = branchOutput.Trim();
+        return RunGitCommand($"pull origin {branch}");
+    }
+
+    /// <summary>
     /// Checks if the current directory is a git repository.
     /// </summary>
     public static bool IsGitRepository()
@@ -145,6 +182,153 @@ public static class GitService
             return (false, string.Empty, error);
         }
         return (true, output.Trim(), string.Empty);
+    }
+
+    /// <summary>
+    /// Gets the list of commits that are ahead of the remote (committed but not pushed).
+    /// </summary>
+    public static (bool success, List<GitCommitInfo> commits, string errorMessage) GetUnpushedCommits()
+    {
+        var commits = new List<GitCommitInfo>();
+        
+        // First, try to get the remote branch name
+        var (branchSuccess, branch, branchError) = GetCurrentBranch();
+        if (!branchSuccess)
+        {
+            return (false, commits, branchError);
+        }
+
+        // Check if there's a remote tracking branch
+        var (trackSuccess, trackOutput, _) = RunGitCommand($"rev-parse --abbrev-ref --symbolic-full-name @{{u}}");
+        if (!trackSuccess)
+        {
+            // No remote tracking branch - check if remote exists, if not, all commits are unpushed
+            var (remoteExists, _, _) = RunGitCommand("ls-remote --heads origin");
+            if (remoteExists)
+            {
+                // Remote exists but no tracking branch - try to get commits vs origin/main
+                var (fetchSuccess, _, _) = RunGitCommand("fetch origin --quiet");
+                var (success, output, error) = RunGitCommand($"log origin/{branch}..HEAD --oneline --pretty=format:\"%h|%s|%an|%ar\"");
+                if (success && !string.IsNullOrEmpty(output))
+                {
+                    ParseCommits(output, commits);
+                }
+                else
+                {
+                    // origin/branch doesn't exist, all local commits are unpushed
+                    var (allSuccess, allOutput, _) = RunGitCommand($"log --oneline --pretty=format:\"%h|%s|%an|%ar\" -20");
+                    if (allSuccess && !string.IsNullOrEmpty(allOutput))
+                    {
+                        ParseCommits(allOutput, commits);
+                    }
+                }
+            }
+            else
+            {
+                // No remote - all local commits are unpushed
+                var (allSuccess, allOutput, _) = RunGitCommand($"log --oneline --pretty=format:\"%h|%s|%an|%ar\" -20");
+                if (allSuccess && !string.IsNullOrEmpty(allOutput))
+                {
+                    ParseCommits(allOutput, commits);
+                }
+            }
+            return (true, commits, string.Empty);
+        }
+
+        // Fetch to ensure we have latest remote info (quietly)
+        RunGitCommand("fetch origin --quiet");
+        
+        // Get commits ahead of remote
+        var (success2, output2, error2) = RunGitCommand($"log origin/{branch}..HEAD --oneline --pretty=format:\"%h|%s|%an|%ar\"");
+        if (!success2 || string.IsNullOrEmpty(output2))
+        {
+            // If origin/branch doesn't exist yet, all local commits are unpushed
+            var (allSuccess, allOutput, _) = RunGitCommand($"log --oneline --pretty=format:\"%h|%s|%an|%ar\" -20");
+            if (allSuccess && !string.IsNullOrEmpty(allOutput))
+            {
+                ParseCommits(allOutput, commits);
+            }
+            return (true, commits, string.Empty);
+        }
+
+        ParseCommits(output2, commits);
+        return (true, commits, string.Empty);
+    }
+
+    /// <summary>
+    /// Gets the count of commits ahead and behind the remote.
+    /// </summary>
+    public static (bool success, int ahead, int behind, string errorMessage) GetCommitAheadBehind()
+    {
+        var (branchSuccess, branch, branchError) = GetCurrentBranch();
+        if (!branchSuccess)
+        {
+            return (false, 0, 0, branchError);
+        }
+
+        var (trackSuccess, _, _) = RunGitCommand($"rev-parse --abbrev-ref --symbolic-full-name @{{u}}");
+        if (!trackSuccess)
+        {
+            // No remote tracking branch - check if there are any local commits
+            var (hasCommits, commitCount, _) = RunGitCommand("rev-list --count HEAD");
+            if (hasCommits && int.TryParse(commitCount.Trim(), out var count) && count > 0)
+            {
+                // Check if remote exists
+                var (remoteExists, _, _) = RunGitCommand("ls-remote --heads origin");
+                if (remoteExists)
+                {
+                    // Remote exists but no tracking - all commits are ahead
+                    return (true, count, 0, string.Empty);
+                }
+                else
+                {
+                    // No remote - all commits are unpushed
+                    return (true, count, 0, string.Empty);
+                }
+            }
+            return (true, 0, 0, string.Empty);
+        }
+
+        var (success, output, error) = RunGitCommand($"rev-list --left-right --count origin/{branch}...HEAD");
+        if (!success)
+        {
+            return (false, 0, 0, error);
+        }
+
+        var parts = output.Trim().Split(new[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length != 2)
+        {
+            return (true, 0, 0, string.Empty);
+        }
+
+        if (int.TryParse(parts[0], out var behind) && int.TryParse(parts[1], out var ahead))
+        {
+            return (true, ahead, behind, string.Empty);
+        }
+
+        return (true, 0, 0, string.Empty);
+    }
+
+    private static void ParseCommits(string output, List<GitCommitInfo> commits)
+    {
+        var lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (var line in lines)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+                continue;
+
+            var parts = line.Split('|');
+            if (parts.Length >= 4)
+            {
+                commits.Add(new GitCommitInfo
+                {
+                    Hash = parts[0],
+                    Message = parts[1],
+                    Author = parts[2],
+                    RelativeTime = parts[3]
+                });
+            }
+        }
     }
 
     private static GitFileStatusType GetStatusFromCode(string code)
@@ -237,5 +421,16 @@ public enum GitFileStatusType
     Added,
     Modified,
     Deleted
+}
+
+/// <summary>
+/// Represents information about a Git commit.
+/// </summary>
+public class GitCommitInfo
+{
+    public string Hash { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public string Author { get; set; } = string.Empty;
+    public string RelativeTime { get; set; } = string.Empty;
 }
 

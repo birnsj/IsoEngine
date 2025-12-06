@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using GameEditor.Services;
@@ -13,29 +15,35 @@ namespace GameEditor.Forms;
 public class GitControlDialog : Form
 {
     private ListBox? _changedFilesListBox;
+    private ListBox? _committedListBox;
     private TextBox? _commitMessageTextBox;
     private Button? _refreshButton;
+    private Button? _fetchButton;
+    private Button? _pullButton;
     private Button? _stageAllButton;
     private Button? _commitButton;
     private Button? _pushButton;
     private Label? _statusLabel;
     private Label? _branchLabel;
     private Label? _remoteLabel;
+    private Label? _committedLabel;
+    private SplitContainer? _mainSplitContainer;
 
     public GitControlDialog()
     {
         InitializeComponent();
         RefreshFileList();
+        RefreshCommittedList();
         UpdateStatusInfo();
     }
 
     private void InitializeComponent()
     {
         Text = "Git Control";
-        Size = new Size(800, 600);
+        Size = new Size(1000, 700);
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.Sizable;
-        MinimumSize = new Size(700, 500);
+        MinimumSize = new Size(900, 600);
 
         var mainPanel = new Panel
         {
@@ -49,7 +57,7 @@ public class GitControlDialog : Form
         var statusPanel = new Panel
         {
             Location = new Point(15, yPos),
-            Size = new Size(750, 80),
+            Size = new Size(950, 80),
             BorderStyle = BorderStyle.FixedSingle,
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         };
@@ -84,28 +92,54 @@ public class GitControlDialog : Form
         mainPanel.Controls.Add(statusPanel);
         yPos += 90;
 
-        // Changed files list
+        // Split container for changed files and committed changes
+        _mainSplitContainer = new SplitContainer
+        {
+            Orientation = Orientation.Horizontal,
+            Location = new Point(15, yPos),
+            Size = new Size(950, 280),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
+            SplitterDistance = 140
+        };
+
+        // Top panel: Changed files (unstaged/uncommitted)
+        var changedFilesPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(5) };
         var filesLabel = new Label
         {
-            Text = "Changed Files:",
-            Location = new Point(15, yPos),
-            AutoSize = true,
+            Text = "Uncommitted Changes:",
+            Dock = DockStyle.Top,
+            Height = 20,
             Font = new Font(DefaultFont.FontFamily, 10f, FontStyle.Bold)
         };
-        mainPanel.Controls.Add(filesLabel);
-
-        yPos += 25;
-
         _changedFilesListBox = new ListBox
         {
-            Location = new Point(15, yPos),
-            Size = new Size(750, 250),
-            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
+            Dock = DockStyle.Fill,
             SelectionMode = SelectionMode.MultiExtended
         };
-        mainPanel.Controls.Add(_changedFilesListBox);
+        changedFilesPanel.Controls.Add(_changedFilesListBox);
+        changedFilesPanel.Controls.Add(filesLabel);
 
-        yPos += 260;
+        // Bottom panel: Committed changes (ready to push)
+        var committedPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(5) };
+        _committedLabel = new Label
+        {
+            Text = "Committed Changes (Ready to Push):",
+            Dock = DockStyle.Top,
+            Height = 20,
+            Font = new Font(DefaultFont.FontFamily, 10f, FontStyle.Bold)
+        };
+        _committedListBox = new ListBox
+        {
+            Dock = DockStyle.Fill
+        };
+        committedPanel.Controls.Add(_committedListBox);
+        committedPanel.Controls.Add(_committedLabel);
+
+        _mainSplitContainer.Panel1.Controls.Add(changedFilesPanel);
+        _mainSplitContainer.Panel2.Controls.Add(committedPanel);
+
+        mainPanel.Controls.Add(_mainSplitContainer);
+        yPos += 290;
 
         // Commit message section
         var commitLabel = new Label
@@ -122,7 +156,7 @@ public class GitControlDialog : Form
         _commitMessageTextBox = new TextBox
         {
             Location = new Point(15, yPos),
-            Size = new Size(750, 60),
+            Size = new Size(950, 60),
             Multiline = true,
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
             Text = "Update from IsoEngine Editor"
@@ -148,11 +182,31 @@ public class GitControlDialog : Form
         _refreshButton.Click += (s, e) => RefreshFileList();
         buttonPanel.Controls.Add(_refreshButton);
 
+        _fetchButton = new Button
+        {
+            Text = "Fetch",
+            Size = new Size(90, 30),
+            Location = new Point(120, 10),
+            Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+        };
+        _fetchButton.Click += (s, e) => FetchChanges();
+        buttonPanel.Controls.Add(_fetchButton);
+
+        _pullButton = new Button
+        {
+            Text = "Pull",
+            Size = new Size(90, 30),
+            Location = new Point(220, 10),
+            Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+        };
+        _pullButton.Click += (s, e) => PullChanges();
+        buttonPanel.Controls.Add(_pullButton);
+
         _stageAllButton = new Button
         {
             Text = "Stage All",
-            Size = new Size(100, 30),
-            Location = new Point(120, 10),
+            Size = new Size(90, 30),
+            Location = new Point(320, 10),
             Anchor = AnchorStyles.Bottom | AnchorStyles.Left
         };
         _stageAllButton.Click += (s, e) => StageAllFiles();
@@ -161,8 +215,8 @@ public class GitControlDialog : Form
         _commitButton = new Button
         {
             Text = "Commit",
-            Size = new Size(100, 30),
-            Location = new Point(230, 10),
+            Size = new Size(90, 30),
+            Location = new Point(420, 10),
             Anchor = AnchorStyles.Bottom | AnchorStyles.Left
         };
         _commitButton.Click += (s, e) => CommitChanges();
@@ -171,8 +225,8 @@ public class GitControlDialog : Form
         _pushButton = new Button
         {
             Text = "Push",
-            Size = new Size(100, 30),
-            Location = new Point(340, 10),
+            Size = new Size(90, 30),
+            Location = new Point(520, 10),
             Anchor = AnchorStyles.Bottom | AnchorStyles.Left
         };
         _pushButton.Click += (s, e) => PushChanges();
@@ -231,7 +285,25 @@ public class GitControlDialog : Form
             _remoteLabel!.Text = "Remote: Not configured";
         }
 
-        _statusLabel!.Text = "Status: Ready";
+        // Check commit status
+        var (aheadSuccess, ahead, behind, _) = GitService.GetCommitAheadBehind();
+        if (aheadSuccess)
+        {
+            var statusParts = new List<string>();
+            if (ahead > 0)
+                statusParts.Add($"{ahead} ahead");
+            if (behind > 0)
+                statusParts.Add($"{behind} behind");
+            
+            if (statusParts.Count > 0)
+                _statusLabel!.Text = $"Status: {string.Join(", ", statusParts)}";
+            else
+                _statusLabel!.Text = "Status: Up to date";
+        }
+        else
+        {
+            _statusLabel!.Text = "Status: Ready";
+        }
     }
 
     private void RefreshFileList()
@@ -256,7 +328,7 @@ public class GitControlDialog : Form
 
         if (files.Count == 0)
         {
-            _changedFilesListBox.Items.Add("No changes detected");
+            _changedFilesListBox.Items.Add("No uncommitted changes");
             return;
         }
 
@@ -274,7 +346,63 @@ public class GitControlDialog : Form
             _changedFilesListBox.Items.Add($"{statusPrefix} {file.FilePath}");
         }
 
-        _statusLabel!.Text = $"Status: {files.Count} file(s) changed";
+        RefreshCommittedList();
+    }
+
+    private void RefreshCommittedList()
+    {
+        if (_committedListBox == null)
+            return;
+
+        _committedListBox.Items.Clear();
+
+        if (!GitService.IsGitRepository())
+        {
+            _committedListBox.Items.Add("Not a Git repository");
+            return;
+        }
+
+        // Get count of commits ahead
+        var (aheadSuccess, ahead, behind, aheadError) = GitService.GetCommitAheadBehind();
+        if (aheadSuccess && ahead > 0)
+        {
+            _committedLabel!.Text = $"Committed Changes (Ready to Push): {ahead} commit(s) ahead";
+            
+            // Get the actual commits
+            var (success, commits, error) = GitService.GetUnpushedCommits();
+            if (success && commits.Count > 0)
+            {
+                foreach (var commit in commits)
+                {
+                    var shortHash = commit.Hash.Length > 7 ? commit.Hash.Substring(0, 7) : commit.Hash;
+                    _committedListBox.Items.Add($"{shortHash} - {commit.Message} ({commit.RelativeTime})");
+                }
+            }
+            else
+            {
+                _committedListBox.Items.Add($"{ahead} commit(s) ready to push");
+            }
+        }
+        else
+        {
+            _committedLabel!.Text = "Committed Changes (Ready to Push):";
+            
+            // Still check for commits even if ahead/behind doesn't show them
+            var (success, commits, error) = GitService.GetUnpushedCommits();
+            if (success && commits.Count > 0)
+            {
+                _committedLabel!.Text = $"Committed Changes (Ready to Push): {commits.Count} commit(s)";
+                foreach (var commit in commits)
+                {
+                    var shortHash = commit.Hash.Length > 7 ? commit.Hash.Substring(0, 7) : commit.Hash;
+                    _committedListBox.Items.Add($"{shortHash} - {commit.Message} ({commit.RelativeTime})");
+                }
+            }
+            else
+            {
+                _committedListBox.Items.Add("No commits to push");
+            }
+        }
     }
 
     private void StageAllFiles()
@@ -301,11 +429,34 @@ public class GitControlDialog : Form
             return;
         }
 
+        // Check if there are any staged changes to commit by checking git diff --cached
+        var (hasStagedSuccess, stagedOutput, _) = RunGitCommand("diff --cached --name-only");
+        var hasStagedChanges = hasStagedSuccess && !string.IsNullOrWhiteSpace(stagedOutput);
+        
+        if (!hasStagedChanges)
+        {
+            MessageBox.Show("No staged changes to commit. Stage files first using 'Stage All'.", "Nothing to Commit", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
         var (success, output, error) = GitService.Commit(message);
         if (success)
         {
             MessageBox.Show("Changes committed successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            
+            // Small delay to ensure git has processed the commit
+            System.Threading.Thread.Sleep(100);
+            
+            // Refresh all views
             RefreshFileList();
+            RefreshCommittedList();
+            UpdateStatusInfo();
+            
+            // Reset commit message to default
+            if (_commitMessageTextBox != null)
+            {
+                _commitMessageTextBox.Text = "Update from IsoEngine Editor";
+            }
         }
         else
         {
@@ -321,22 +472,249 @@ public class GitControlDialog : Form
         }
     }
 
+    private (bool success, string output, string error) RunGitCommand(string arguments)
+    {
+        try
+        {
+            var repoRoot = GetRepositoryRoot();
+            var processStartInfo = new ProcessStartInfo
+            {
+                FileName = "git",
+                Arguments = arguments,
+                WorkingDirectory = repoRoot,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(processStartInfo);
+            if (process == null)
+            {
+                return (false, string.Empty, "Failed to start git process");
+            }
+
+            var output = process.StandardOutput.ReadToEnd();
+            var error = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+
+            if (process.ExitCode != 0 && !string.IsNullOrEmpty(error))
+            {
+                return (false, output, error);
+            }
+
+            return (true, output, string.Empty);
+        }
+        catch (Exception ex)
+        {
+            return (false, string.Empty, ex.Message);
+        }
+    }
+
+    private string GetRepositoryRoot()
+    {
+        var currentDir = Directory.GetCurrentDirectory();
+        var dir = new DirectoryInfo(currentDir);
+
+        while (dir != null)
+        {
+            if (Directory.Exists(Path.Combine(dir.FullName, ".git")))
+            {
+                return dir.FullName;
+            }
+            dir = dir.Parent;
+        }
+
+        return currentDir;
+    }
+
+    private void FetchChanges()
+    {
+        var (success, output, error) = GitService.Fetch();
+        if (success)
+        {
+            var message = "Fetch completed successfully!";
+            if (!string.IsNullOrEmpty(output))
+            {
+                message += $"\n\n{output}";
+            }
+            MessageBox.Show(message, "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            RefreshFileList();
+            RefreshCommittedList();
+        }
+        else
+        {
+            var errorMsg = string.IsNullOrEmpty(error) ? output : error;
+            MessageBox.Show($"Error fetching changes:\n{errorMsg}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void PullChanges()
+    {
+        // Check if there are uncommitted changes that might conflict
+        var (hasChanges, files, _) = GitService.GetChangedFiles();
+        if (hasChanges && files.Count > 0)
+        {
+            var result = MessageBox.Show(
+                $"You have {files.Count} uncommitted change(s). Pulling might cause conflicts.\n\n" +
+                "Would you like to continue anyway?",
+                "Uncommitted Changes",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+            
+            if (result != DialogResult.Yes)
+                return;
+        }
+
+        var (success, output, error) = GitService.Pull();
+        if (success)
+        {
+            var message = "Pull completed successfully!";
+            if (!string.IsNullOrEmpty(output))
+            {
+                message += $"\n\n{output}";
+            }
+            MessageBox.Show(message, "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            RefreshFileList();
+            RefreshCommittedList();
+        }
+        else
+        {
+            var errorMsg = string.IsNullOrEmpty(error) ? output : error;
+            if (errorMsg.Contains("CONFLICT") || errorMsg.Contains("conflict"))
+            {
+                MessageBox.Show(
+                    $"Merge conflicts detected during pull:\n\n{errorMsg}\n\n" +
+                    "Please resolve the conflicts manually using Git commands or a Git client.",
+                    "Merge Conflicts",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }
+            else
+            {
+                MessageBox.Show($"Error pulling changes:\n{errorMsg}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+    }
+
     private void PushChanges()
     {
-        var result = MessageBox.Show("Push changes to remote repository?", "Confirm Push", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+        // Check if there are commits to push
+        var (aheadSuccess, ahead, behind, _) = GitService.GetCommitAheadBehind();
+        if (!aheadSuccess || ahead == 0)
+        {
+            MessageBox.Show("No commits to push. Commit your changes first.", "Nothing to Push", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        // Check if remote has changes that need to be pulled first
+        if (behind > 0)
+        {
+            var pullResult = MessageBox.Show(
+                $"The remote repository has {behind} commit(s) that you don't have locally.\n\n" +
+                "You need to pull and merge these changes before pushing.\n\n" +
+                "Would you like to pull now?",
+                "Pull Required",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+            
+            if (pullResult == DialogResult.Yes)
+            {
+                PullChanges();
+                // After pulling, try push again if still ahead
+                var (newAheadSuccess, newAhead, _, _) = GitService.GetCommitAheadBehind();
+                if (newAheadSuccess && newAhead > 0)
+                {
+                    // Ask again to push after pull
+                    var pushAfterPull = MessageBox.Show(
+                        $"After pulling, you still have {newAhead} commit(s) to push.\n\nWould you like to push now?",
+                        "Push After Pull",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question);
+                    
+                    if (pushAfterPull == DialogResult.Yes)
+                    {
+                        // Continue with push below
+                        ahead = newAhead;
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+                else
+                {
+                    return;
+                }
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        var (commitSuccess, commits, _) = GitService.GetUnpushedCommits();
+        var commitList = commitSuccess && commits.Count > 0 
+            ? string.Join("\n", commits.Take(5).Select(c => $"- {c.Hash.Substring(0, Math.Min(7, c.Hash.Length))}: {c.Message}"))
+            : $"{ahead} commit(s)";
+        
+        if (commits.Count > 5)
+        {
+            commitList += $"\n... and {commits.Count - 5} more";
+        }
+
+        var result = MessageBox.Show(
+            $"Push {ahead} committed change(s) to remote repository?\n\n{commitList}",
+            "Confirm Push",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Question);
+        
         if (result != DialogResult.Yes)
             return;
 
         var (success, output, error) = GitService.Push();
         if (success)
         {
-            MessageBox.Show("Changes pushed successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show("Committed changes pushed successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
             RefreshFileList();
+            RefreshCommittedList();
         }
         else
         {
             var errorMsg = string.IsNullOrEmpty(error) ? output : error;
-            MessageBox.Show($"Error pushing changes:\n{errorMsg}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            
+            // Check for the specific "fetch first" error
+            if (errorMsg.Contains("fetch first") || errorMsg.Contains("Updates were rejected"))
+            {
+                var pullResult = MessageBox.Show(
+                    $"The remote repository has changes that you don't have locally.\n\n" +
+                    $"Error: {errorMsg}\n\n" +
+                    "Would you like to pull and merge the remote changes first?",
+                    "Pull Required",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning);
+                
+                if (pullResult == DialogResult.Yes)
+                {
+                    PullChanges();
+                    // After pulling, try push again
+                    var (retrySuccess, retryOutput, retryError) = GitService.Push();
+                    if (retrySuccess)
+                    {
+                        MessageBox.Show("Committed changes pushed successfully after pull!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        RefreshFileList();
+                        RefreshCommittedList();
+                    }
+                    else
+                    {
+                        MessageBox.Show($"Error pushing after pull:\n{retryError}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show($"Error pushing changes:\n{errorMsg}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }
